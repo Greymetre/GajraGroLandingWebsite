@@ -67,7 +67,7 @@ a new deployment is required after changing them.
 ```bash
 npm run dev      # local development server
 npm run build    # production build
-npm run start    # Railway/production preview server
+npm run start    # Railway/production static server
 npm run lint     # ESLint checks
 npm run preview  # local production preview
 ```

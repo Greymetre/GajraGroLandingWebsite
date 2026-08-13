@@ -1,0 +1,36 @@
+/* Explicit source registration is required here because the project directory
+   contains a space and Tailwind's automatic detector was only emitting reset
+   styles. Paths are relative to this stylesheet. */
+@import "tailwindcss" source(none);
+@source "./*.jsx";
+@source "./pages/*.jsx";
+@source "./layout/*.jsx";
+@source "./components/Home/*.jsx";
+@source "./components/Brands/*.jsx";
+@source "./components/Products/*.jsx";
+@source "./components/utilities/*.jsx";
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Add a smooth tilt effect to the whole track */
+.slider-track {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

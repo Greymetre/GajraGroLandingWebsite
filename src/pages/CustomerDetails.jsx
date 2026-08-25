@@ -22,24 +22,46 @@ import {
   getDistributorStates,
   getAllCustomersByType,
 } from "../config/api";
-import { getDistanceInKm, parseCoordinates, formatDistance } from "../config/geo";
+import {
+  getDistanceInKm,
+  parseCoordinates,
+  formatDistance,
+  buildCoordinateSanityIndex,
+  hasPlausibleCoordinates,
+} from "../config/geo";
 
 const StoreCard = ({ store, type }) => {
   const [copiedAddr, setCopiedAddr] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState(false);
 
-  const generateMapLink = () => {
-    if (store.mapLink && store.mapLink.trim() !== "") {
-      return store.mapLink.startsWith("http")
+  const explicitMapLink =
+    store.mapLink && store.mapLink.trim() !== ""
+      ? store.mapLink.startsWith("http")
         ? store.mapLink
-        : `https://${store.mapLink}`;
-    }
-    const searchQuery = encodeURIComponent(
-      `${store.name} ${store.address1} ${store.city_name}`,
-    );
+        : `https://${store.mapLink}`
+      : null;
 
-    return `https://www.google.com/maps/search/?api=1&query=${searchQuery}`;
-  };
+  // Google Maps resolves a coordinate pair exactly, so the shop's saved
+  // latitude/longitude drives the link. The name/address text stays as the
+  // fallback for records that have no coordinates saved.
+  const point = parseCoordinates(store);
+  const destination = point
+    ? `${point.lat},${point.lng}`
+    : `${store.name} ${store.address1} ${store.city_name}`;
+
+  // Turn-by-turn directions from wherever the user currently is.
+  const directionsLink =
+    explicitMapLink ||
+    `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+      destination,
+    )}`;
+
+  // Drops a pin on the shop without starting navigation.
+  const placeLink =
+    explicitMapLink ||
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      destination,
+    )}`;
 
   const handleCopy = (text, setSetter) => {
     navigator.clipboard.writeText(text);
@@ -53,9 +75,11 @@ const StoreCard = ({ store, type }) => {
     <div className="bg-[#F6F6F6] p-5 md:p-6 rounded-2xl border border-gray-100 flex flex-col gap-3 md:gap-4 relative mb-4 shadow-sm group hover:border-[#FBF201] transition-all">
       {/*  NAVIGATION REDIRECT */}
       <a
-        href={generateMapLink()}
+        href={directionsLink}
         target="_blank"
         rel="noopener noreferrer"
+        title={`Directions to ${store?.name}`}
+        aria-label={`Directions to ${store?.name}`}
         className="absolute right-4 md:right-6 top-1/2 -translate-y-1/2 bg-[#FBF201] p-2.5 md:p-3 rounded-full shadow-md active:scale-95 transition-transform z-10 flex items-center justify-center"
       >
         <Navigation size={18} className="text-gray-900 fill-current" />
@@ -99,7 +123,7 @@ const StoreCard = ({ store, type }) => {
           </div> */}
 
           <a
-            href={generateMapLink()}
+            href={placeLink}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-start gap-2 hover:text-gray-900 transition-colors"
@@ -281,11 +305,15 @@ const CustomerDetails = () => {
 
   const nearbyType = customerPayload.customerType?.[0] || 2;
 
-  const buildNearbyResults = (records, origin) =>
+  const buildNearbyResults = (records, origin, sanityIndex) =>
     records
       .map((record) => {
         const point = parseCoordinates(record);
         if (!point) return null;
+
+        // Skip records whose coordinates contradict their own city/state — they
+        // are desk-captured points, not the shop's real position.
+        if (!hasPlausibleCoordinates(record, point, sanityIndex)) return null;
 
         const distanceKm = getDistanceInKm(origin, point);
         return distanceKm <= NEARBY_RADIUS_KM ? { ...record, distanceKm } : null;
@@ -325,20 +353,26 @@ const CustomerDetails = () => {
     setNearbyError("");
 
     try {
-      let records = nearbyCacheRef.current[type];
+      let cached = nearbyCacheRef.current[type];
 
-      if (!records) {
-        records = await getAllCustomersByType(type, (page, lastPage) => {
+      if (!cached) {
+        const records = await getAllCustomersByType(type, (page, lastPage) => {
           if (lastPage > 1 && requestId === nearbyRequestRef.current) {
             setNearbyProgress(`Loading ${page} of ${lastPage}`);
           }
         });
-        nearbyCacheRef.current[type] = records;
+
+        // The sanity index needs the whole list, so it is built once per type
+        // and cached alongside the records.
+        cached = { records, sanityIndex: buildCoordinateSanityIndex(records) };
+        nearbyCacheRef.current[type] = cached;
       }
 
       if (requestId !== nearbyRequestRef.current) return;
 
-      setNearbyResults(buildNearbyResults(records, origin));
+      setNearbyResults(
+        buildNearbyResults(cached.records, origin, cached.sanityIndex),
+      );
       setCurrentPage(1);
     } catch (err) {
       console.error("Nearby search failed:", err);

@@ -289,28 +289,25 @@ const CustomerDetails = () => {
   // ── NEARBY SEARCH ──────────────────────────────────────────────────────────
   const NEARBY_RADIUS_KM = 10;
   const NEARBY_PER_PAGE = 20;
-  // Which locator was this page opened from? The query flag and the route
-  // segment are both honoured, so a bare /customer-details/Mechanic behaves
-  // the same as one carrying ?mechanicStatus=true.
-  const isMechanicLocator =
-    mechanicStatus === "true" ||
-    defaultType === "Mechanic" ||
-    defaultType === "Fleet Owner";
+  // The app deep-links into one locator and narrows the type picker with
+  // ?status / ?mechanicStatus. Opened directly on the web without those flags
+  // every customer type stays selectable.
+  const filteredCustomerTypeOptions =
+    status === "true"
+      ? [
+          { id: 1, name: "Distributor" },
+          { id: 2, name: "Retailer" },
+        ]
+      : mechanicStatus === "true"
+        ? [
+            { id: 4, name: "Mechanic" },
+            { id: 6, name: "Fleet Owner" },
+          ]
+        : customerTypeOptions;
 
-  const MECHANIC_TYPE_OPTIONS = [
-    { id: 4, name: "Mechanic" },
-    { id: 6, name: "Fleet Owner" },
-  ];
-
-  const DEALER_TYPE_OPTIONS = [
-    { id: 1, name: "Distributor" },
-    { id: 2, name: "Retailer" },
-  ];
-
-  // Nearby search must stay inside the types the page was opened for.
-  const NEARBY_TYPE_OPTIONS = isMechanicLocator
-    ? MECHANIC_TYPE_OPTIONS
-    : DEALER_TYPE_OPTIONS;
+  // Nearby search offers exactly the same types as the main dropdown, so the
+  // two can never disagree.
+  const NEARBY_TYPE_OPTIONS = filteredCustomerTypeOptions;
 
   const [nearbyMode, setNearbyMode] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
@@ -491,11 +488,6 @@ const CustomerDetails = () => {
     6: "Fleet Owner",
   };
 
-  const filteredCustomerTypeOptions = isMechanicLocator
-    ? MECHANIC_TYPE_OPTIONS
-    : status === "true"
-      ? DEALER_TYPE_OPTIONS
-      : customerTypeOptions;
   // useEffect(() => {
   //   if (customerType) {
   //     setCustomerPayload((prev) => ({

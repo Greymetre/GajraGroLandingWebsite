@@ -28,7 +28,7 @@ const CustomDropdown = ({ label, options, onChange, isDistributor,value }) => {
     <div className="relative w-full group">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full bg-white border-2 rounded-2xl p-4 flex items-center justify-between transition-all duration-300 shadow-sm
+        className={`w-full bg-white border-2 rounded-2xl p-3 md:p-4 flex items-center justify-between gap-1 transition-all duration-300 shadow-sm
           ${isOpen ? 'border-[#FFED00] ring-4 ring-[#FFED00]/10' : 'border-gray-100 group-hover:border-gray-200'}`}
       >
         {/* <span className={`font-bold text-sm md:text-base ${selected === label ? 'text-gray-400' : 'text-gray-900'}`}>
@@ -36,7 +36,7 @@ const CustomDropdown = ({ label, options, onChange, isDistributor,value }) => {
         </span> */}
 
         <span
-  className={`font-bold text-sm md:text-base ${
+  className={`font-bold text-sm md:text-base truncate text-left ${
     !selected ? "text-gray-400" : "text-gray-900"
   }`}
 >
@@ -45,7 +45,7 @@ const CustomDropdown = ({ label, options, onChange, isDistributor,value }) => {
 
         <ChevronDown 
           size={20} 
-          className={`transition-transform duration-300 ${isOpen ? 'rotate-180 text-gray-900' : ''}`} 
+          className={`shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180 text-gray-900' : ''}`} 
         />
       </button>
 

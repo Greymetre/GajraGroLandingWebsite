@@ -1077,7 +1077,7 @@ const CustomerDetails = () => {
               className={`max-w-6xl mx-auto ${
                 nearbyMode
                   ? "grid grid-cols-1 sm:max-w-sm"
-                  : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
+                  : "grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6"
               }`}
             >
               {nearbyMode && (
@@ -1122,7 +1122,7 @@ const CustomerDetails = () => {
                       }));
                     }
                   }}
-                  className="w-full bg-white border-3 border-gray-100 rounded-2xl p-4 font-bold text-sm md:text-base outline-none focus:border-[#FFED00]"
+                  className="w-full bg-white border-3 border-gray-100 rounded-2xl p-3 md:p-4 font-bold text-sm md:text-base outline-none focus:border-[#FFED00]"
                 />
 
                 {showPincodeDropdown && filteredPincodes.length > 0 && (
@@ -1242,11 +1242,11 @@ const CustomerDetails = () => {
               )}
             </div>
 
-            <div className="flex justify-center mt-10 md:mt-14">
+            <div className="flex justify-center mt-6 md:mt-14">
               <img
                 src={logo}
                 alt=""
-                className="h-7 w-7 md:h-16 md:w-16 rounded-full object-contain"
+                className="h-11 w-11 md:h-16 md:w-16 rounded-full object-contain"
               />
             </div>
           </div>

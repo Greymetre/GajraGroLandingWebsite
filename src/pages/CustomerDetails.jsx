@@ -289,19 +289,28 @@ const CustomerDetails = () => {
   // ── NEARBY SEARCH ──────────────────────────────────────────────────────────
   const NEARBY_RADIUS_KM = 10;
   const NEARBY_PER_PAGE = 20;
-  // Nearby search must stay inside the customer types the page was opened for:
-  // Mechanic/Fleet Owner when arriving from the mechanic locator, otherwise
-  // Distributor/Retailer. Mirrors filteredCustomerTypeOptions below.
-  const NEARBY_TYPE_OPTIONS =
-    mechanicStatus === "true"
-      ? [
-          { id: 4, name: "Mechanic" },
-          { id: 6, name: "Fleet Owner" },
-        ]
-      : [
-          { id: 1, name: "Distributor" },
-          { id: 2, name: "Retailer" },
-        ];
+  // Which locator was this page opened from? The query flag and the route
+  // segment are both honoured, so a bare /customer-details/Mechanic behaves
+  // the same as one carrying ?mechanicStatus=true.
+  const isMechanicLocator =
+    mechanicStatus === "true" ||
+    defaultType === "Mechanic" ||
+    defaultType === "Fleet Owner";
+
+  const MECHANIC_TYPE_OPTIONS = [
+    { id: 4, name: "Mechanic" },
+    { id: 6, name: "Fleet Owner" },
+  ];
+
+  const DEALER_TYPE_OPTIONS = [
+    { id: 1, name: "Distributor" },
+    { id: 2, name: "Retailer" },
+  ];
+
+  // Nearby search must stay inside the types the page was opened for.
+  const NEARBY_TYPE_OPTIONS = isMechanicLocator
+    ? MECHANIC_TYPE_OPTIONS
+    : DEALER_TYPE_OPTIONS;
 
   const [nearbyMode, setNearbyMode] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
@@ -482,18 +491,11 @@ const CustomerDetails = () => {
     6: "Fleet Owner",
   };
 
-  const filteredCustomerTypeOptions =
-    status === "true"
-      ? [
-          { id: 1, name: "Distributor" },
-          { id: 2, name: "Retailer" },
-        ]
-      : mechanicStatus === "true"
-        ? [
-            { id: 4, name: "Mechanic" },
-            { id: 6, name: "Fleet Owner" },
-          ]
-        : customerTypeOptions;
+  const filteredCustomerTypeOptions = isMechanicLocator
+    ? MECHANIC_TYPE_OPTIONS
+    : status === "true"
+      ? DEALER_TYPE_OPTIONS
+      : customerTypeOptions;
   // useEffect(() => {
   //   if (customerType) {
   //     setCustomerPayload((prev) => ({

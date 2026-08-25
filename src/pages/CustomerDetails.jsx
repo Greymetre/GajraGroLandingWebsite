@@ -289,10 +289,19 @@ const CustomerDetails = () => {
   // ── NEARBY SEARCH ──────────────────────────────────────────────────────────
   const NEARBY_RADIUS_KM = 10;
   const NEARBY_PER_PAGE = 20;
-  const NEARBY_TYPE_OPTIONS = [
-    { id: 1, name: "Distributor" },
-    { id: 2, name: "Retailer" },
-  ];
+  // Nearby search must stay inside the customer types the page was opened for:
+  // Mechanic/Fleet Owner when arriving from the mechanic locator, otherwise
+  // Distributor/Retailer. Mirrors filteredCustomerTypeOptions below.
+  const NEARBY_TYPE_OPTIONS =
+    mechanicStatus === "true"
+      ? [
+          { id: 4, name: "Mechanic" },
+          { id: 6, name: "Fleet Owner" },
+        ]
+      : [
+          { id: 1, name: "Distributor" },
+          { id: 2, name: "Retailer" },
+        ];
 
   const [nearbyMode, setNearbyMode] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
@@ -303,7 +312,8 @@ const CustomerDetails = () => {
   const nearbyCacheRef = useRef({});
   const nearbyRequestRef = useRef(0);
 
-  const nearbyType = customerPayload.customerType?.[0] || 2;
+  const nearbyType =
+    customerPayload.customerType?.[0] || NEARBY_TYPE_OPTIONS[0].id;
 
   const buildNearbyResults = (records, origin, sanityIndex) =>
     records
@@ -398,11 +408,11 @@ const CustomerDetails = () => {
       setCoords(origin);
       setNearbyMode(true);
 
-      // Nearby search only covers distributors and retailers, so fall back to
-      // retailer when the page was opened on any other customer type.
+      // Fall back to the first type this locator allows when the page was
+      // opened on a customer type outside that set.
       const type = NEARBY_TYPE_OPTIONS.some((item) => item.id === nearbyType)
         ? nearbyType
-        : 2;
+        : NEARBY_TYPE_OPTIONS[0].id;
 
       if (type !== nearbyType) {
         setCustomerPayload((prev) => ({ ...prev, customerType: [type] }));

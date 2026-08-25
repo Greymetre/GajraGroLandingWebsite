@@ -147,3 +147,40 @@ export const getYoutubeShorts = async ()=>{
     throw error;
   }
 }
+
+// The retailer API has no radius filter, so nearby search pulls the whole list
+// for one customer type and filters it in the browser. Page size is the largest
+// the API honours, which keeps this to 1 request for distributors and 2 for
+// retailers.
+const NEARBY_PAGE_SIZE = 5000;
+const NEARBY_MAX_PAGES = 5;
+
+export const getAllCustomersByType = async (customerType, onProgress) => {
+  const collected = [];
+  let page = 1;
+  let lastPage = 1;
+
+  do {
+    const query = new URLSearchParams({
+      customer_type: customerType,
+      pageSize: NEARBY_PAGE_SIZE,
+      page,
+    }).toString();
+
+    const res = await fetch(`${DISTRIBUTOR_API_BASE_URL}/getRetailersList?${query}`);
+
+    if (!res.ok) {
+      throw new Error(`Retailer list request failed with ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    collected.push(...(data?.data || []));
+    lastPage = Math.min(data?.pagination?.last_page || 1, NEARBY_MAX_PAGES);
+
+    onProgress?.(page, lastPage);
+    page += 1;
+  } while (page <= lastPage);
+
+  return collected;
+};

@@ -1,6 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Phone, MapPin, Navigation, Home, Copy, Check } from "lucide-react";
+import {
+  Phone,
+  MapPin,
+  Navigation,
+  Home,
+  Copy,
+  Check,
+  LocateFixed,
+} from "lucide-react";
 import gearHero from "../assets/CD-img.png";
 import logo from "../assets/nobg-logo .png";
 import Footer from "../layout/Footer";
@@ -12,7 +20,9 @@ import {
   getDistributorCities,
   getDistributorPincodes,
   getDistributorStates,
+  getAllCustomersByType,
 } from "../config/api";
+import { getDistanceInKm, parseCoordinates, formatDistance } from "../config/geo";
 
 const StoreCard = ({ store, type }) => {
   const [copiedAddr, setCopiedAddr] = useState(false);
@@ -62,6 +72,13 @@ const StoreCard = ({ store, type }) => {
             {store?.name}
           </h4>
         </div>
+
+        {typeof store?.distanceKm === "number" && (
+          <div className="flex items-center gap-1.5 self-start bg-[#FBF201] text-gray-900 text-[10px] md:text-[11px] font-black uppercase tracking-tighter px-2.5 py-1 rounded-full">
+            <Navigation size={11} className="fill-current" />
+            {formatDistance(store.distanceKm)} away
+          </div>
+        )}
 
         <div className="space-y-2 text-[11px] md:text-[13px] text-gray-600 font-medium">
           {/* ADDRESS COPY */}
@@ -244,6 +261,157 @@ const CustomerDetails = () => {
   const status = queryParams.get("status");
   const mechanicStatus = queryParams.get("mechanicStatus");
   const latestRequestRef = useRef(0);
+
+  // ── NEARBY SEARCH ──────────────────────────────────────────────────────────
+  const NEARBY_RADIUS_KM = 10;
+  const NEARBY_PER_PAGE = 20;
+  const NEARBY_TYPE_OPTIONS = [
+    { id: 1, name: "Distributor" },
+    { id: 2, name: "Retailer" },
+  ];
+
+  const [nearbyMode, setNearbyMode] = useState(false);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyError, setNearbyError] = useState("");
+  const [nearbyProgress, setNearbyProgress] = useState("");
+  const [coords, setCoords] = useState(null);
+  const [nearbyResults, setNearbyResults] = useState([]);
+  const nearbyCacheRef = useRef({});
+  const nearbyRequestRef = useRef(0);
+
+  const nearbyType = customerPayload.customerType?.[0] || 2;
+
+  const buildNearbyResults = (records, origin) =>
+    records
+      .map((record) => {
+        const point = parseCoordinates(record);
+        if (!point) return null;
+
+        const distanceKm = getDistanceInKm(origin, point);
+        return distanceKm <= NEARBY_RADIUS_KM ? { ...record, distanceKm } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+
+  const requestCurrentPosition = () =>
+    new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Your browser does not support location access."));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) =>
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          }),
+        (error) => {
+          const messages = {
+            1: "Location permission denied. Allow location access and try again.",
+            2: "Your location is unavailable right now. Please try again.",
+            3: "Locating you took too long. Please try again.",
+          };
+          reject(new Error(messages[error.code] || "Could not detect your location."));
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
+      );
+    });
+
+  const loadNearby = async (type, origin) => {
+    const requestId = ++nearbyRequestRef.current;
+
+    setNearbyLoading(true);
+    setNearbyError("");
+
+    try {
+      let records = nearbyCacheRef.current[type];
+
+      if (!records) {
+        records = await getAllCustomersByType(type, (page, lastPage) => {
+          if (lastPage > 1 && requestId === nearbyRequestRef.current) {
+            setNearbyProgress(`Loading ${page} of ${lastPage}`);
+          }
+        });
+        nearbyCacheRef.current[type] = records;
+      }
+
+      if (requestId !== nearbyRequestRef.current) return;
+
+      setNearbyResults(buildNearbyResults(records, origin));
+      setCurrentPage(1);
+    } catch (err) {
+      console.error("Nearby search failed:", err);
+      if (requestId === nearbyRequestRef.current) {
+        setNearbyResults([]);
+        setNearbyError("Could not load nearby stores. Please try again.");
+      }
+    } finally {
+      if (requestId === nearbyRequestRef.current) {
+        setNearbyLoading(false);
+        setNearbyProgress("");
+      }
+    }
+  };
+
+  const enableNearbyMode = async () => {
+    setNearbyLoading(true);
+    setNearbyError("");
+
+    try {
+      const origin = await requestCurrentPosition();
+
+      setCoords(origin);
+      setNearbyMode(true);
+
+      // Nearby search only covers distributors and retailers, so fall back to
+      // retailer when the page was opened on any other customer type.
+      const type = NEARBY_TYPE_OPTIONS.some((item) => item.id === nearbyType)
+        ? nearbyType
+        : 2;
+
+      if (type !== nearbyType) {
+        setCustomerPayload((prev) => ({ ...prev, customerType: [type] }));
+        navigate({
+          pathname: `/customer-details/${CUSTOMER_TYPE_NAMES[type]}`,
+          search: location.search,
+        });
+      }
+
+      await loadNearby(type, origin);
+    } catch (err) {
+      setNearbyLoading(false);
+      setNearbyError(err.message);
+    }
+  };
+
+  const disableNearbyMode = () => {
+    nearbyRequestRef.current += 1;
+    setNearbyMode(false);
+    setNearbyResults([]);
+    setNearbyError("");
+    setNearbyProgress("");
+    setNearbyLoading(false);
+    setCurrentPage(1);
+  };
+
+  const toggleNearbyMode = () => {
+    if (nearbyLoading) return;
+    nearbyMode ? disableNearbyMode() : enableNearbyMode();
+  };
+
+  const handleNearbyTypeChange = (value) => {
+    if (value === nearbyType) return;
+
+    setCustomerPayload((prev) => ({ ...prev, customerType: [value] }));
+    setCurrentPage(1);
+    navigate({
+      pathname: `/customer-details/${CUSTOMER_TYPE_NAMES[value]}`,
+      search: location.search,
+    });
+
+    if (coords) loadNearby(value, coords);
+  };
   // useEffect(() => {
   //   setCustomerPayload((prev) => ({
   //     ...prev,
@@ -490,6 +658,8 @@ const CustomerDetails = () => {
   // }, [customerPayload, currentPage]);
 
   useEffect(() => {
+    if (nearbyMode) return;
+
     if (
       customerPayload.customerType.length &&
       (customerPayload.pincode.length === 6 ||
@@ -500,13 +670,26 @@ const CustomerDetails = () => {
       fetchData(currentPage);
     }
   }, [
+    nearbyMode,
     customerPayload.customerType,
     customerPayload.state,
     customerPayload.city,
     customerPayload.pincode,
     currentPage,
   ]);
-  const totalPages = Math.ceil(totalDocs / recordPerPage);
+
+  const totalPages = nearbyMode
+    ? Math.max(1, Math.ceil(nearbyResults.length / NEARBY_PER_PAGE))
+    : Math.ceil(totalDocs / recordPerPage);
+
+  const visibleCustomers = nearbyMode
+    ? nearbyResults.slice(
+        (currentPage - 1) * NEARBY_PER_PAGE,
+        currentPage * NEARBY_PER_PAGE,
+      )
+    : customers;
+
+  const isListLoading = nearbyMode ? nearbyLoading : loading;
 
   useEffect(() => {
     const fetchStates = async () => {
@@ -792,13 +975,87 @@ const CustomerDetails = () => {
           <div className="py-10 md:py-16">
             <div className="text-center mb-8 md:mb-12">
               <h3 className="text-2xl md:text-4xl font-black uppercase text-gray-900 tracking-tighter italic">
-                Please Enter Details
+                {nearbyMode ? "Stores Near You" : "Please Enter Details"}
               </h3>
               <div className="w-16 md:w-24 h-1.5 bg-[#FBF201] mx-auto mt-3 rounded-full"></div>
             </div>
 
+            {/* NEARBY SEARCH TOGGLE */}
+            <div className="max-w-6xl mx-auto mb-6 md:mb-8 flex flex-col items-center gap-3">
+              <button
+                type="button"
+                onClick={toggleNearbyMode}
+                disabled={nearbyLoading}
+                aria-pressed={nearbyMode}
+                className={`flex items-center gap-3 rounded-2xl border-2 px-5 py-3 font-black uppercase text-xs md:text-sm tracking-tighter transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                  nearbyMode
+                    ? "bg-[#FBF201] border-[#FBF201] text-gray-900 shadow-md"
+                    : "bg-white border-gray-100 text-gray-700 hover:border-gray-200 shadow-sm"
+                }`}
+              >
+                <LocateFixed
+                  size={18}
+                  className={nearbyLoading ? "animate-pulse" : ""}
+                />
+                Nearby Search
+                <span
+                  className={`relative h-6 w-11 rounded-full transition-colors ${
+                    nearbyMode ? "bg-gray-900" : "bg-gray-200"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${
+                      nearbyMode ? "left-6" : "left-1"
+                    }`}
+                  />
+                </span>
+              </button>
+
+              {nearbyLoading && (
+                <p className="text-xs md:text-sm font-bold text-gray-500">
+                  {nearbyProgress || "Detecting your location..."}
+                </p>
+              )}
+
+              {!nearbyLoading && nearbyMode && coords && (
+                <p className="text-xs md:text-sm font-bold text-gray-500 text-center">
+                  Showing {NEARBY_TYPE_OPTIONS.find((i) => i.id === nearbyType)?.name}
+                  s within {NEARBY_RADIUS_KM} km of your location
+                  <span className="block text-[10px] md:text-xs text-gray-400 font-medium mt-1 normal-case">
+                    Stores without saved map coordinates cannot appear here.
+                  </span>
+                </p>
+              )}
+
+              {nearbyError && (
+                <p className="text-xs md:text-sm font-bold text-red-500 text-center max-w-md">
+                  {nearbyError}
+                </p>
+              )}
+            </div>
+
             {/* DROPDOWNS */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-6xl mx-auto">
+            <div
+              className={`max-w-6xl mx-auto ${
+                nearbyMode
+                  ? "grid grid-cols-1 sm:max-w-sm"
+                  : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
+              }`}
+            >
+              {nearbyMode && (
+                <CustomDropdown
+                  label="Customer Type"
+                  options={NEARBY_TYPE_OPTIONS}
+                  isDistributor={true}
+                  value={
+                    NEARBY_TYPE_OPTIONS.find((item) => item.id === nearbyType)?.name
+                  }
+                  onChange={handleNearbyTypeChange}
+                />
+              )}
+
+              {!nearbyMode && (
+                <>
               <div ref={pincodeRef} className="relative w-full">
                 <input
                   type="text"
@@ -943,6 +1200,8 @@ const CustomerDetails = () => {
     handleDropdownChange("customerType", value)
   }
 />
+                </>
+              )}
             </div>
 
             <div className="flex justify-center mt-10 md:mt-14">
@@ -966,16 +1225,16 @@ const CustomerDetails = () => {
           </div> */}
 
           <div className="flex flex-col md:grid md:grid-cols-3 md:gap-8">
-            {loading ? (
+            {isListLoading ? (
               // 🔄 LOADING UI
               <div className="col-span-3 flex justify-center items-center py-20">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-[#FBF201]"></div>
               </div>
-            ) : customers?.length > 0 ? (
+            ) : visibleCustomers?.length > 0 ? (
               // ✅ DATA UI
-              customers.map((store, i) => (
+              visibleCustomers.map((store, i) => (
                 <StoreCard
-                  key={i}
+                  key={store?.customer_id ?? i}
                   store={store}
                   type={customerPayload?.customerType}
                 />
@@ -983,7 +1242,9 @@ const CustomerDetails = () => {
             ) : (
               // ❌ EMPTY STATE
               <div className="col-span-3 text-center py-20 text-gray-400 font-bold">
-                No Stores Found
+                {nearbyMode
+                  ? `No stores found within ${NEARBY_RADIUS_KM} km of your location`
+                  : "No Stores Found"}
               </div>
             )}
           </div>
@@ -995,6 +1256,7 @@ const CustomerDetails = () => {
              ))}
              <div className="text-gray-300 font-black text-xl md:text-2xl ml-2 cursor-pointer hover:text-[#FBF201] transition-colors">{">"}</div>
           </div> */}
+          {totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 mt-12 flex-wrap">
             {/* PREV */}
             <button
@@ -1036,6 +1298,7 @@ const CustomerDetails = () => {
               {">"}
             </button>
           </div>
+          )}
         </div>
       </main>
 

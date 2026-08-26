@@ -88,12 +88,12 @@ const Navbar = () => {
   return (
     <nav className="bg-[#FBF201] sticky top-0 z-50 shadow-sm border-b border-black/10">
       <div className="w-full px-3 sm:px-4 md:px-6">
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 h-16 sm:h-20 md:h-24">
+        <div className="grid grid-cols-[auto_1fr_auto] lg:grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3 md:gap-4 h-16 sm:h-20 md:h-24">
 
           {/* Logo + wordmark */}
           <Link
             to="/"
-            className="flex items-center gap-2 md:gap-3 flex-shrink-0 transition-transform active:scale-95"
+            className="justify-self-start flex items-center gap-2 md:gap-3 min-w-0 transition-transform active:scale-95"
             title="Go to Home"
           >
             <img
@@ -101,7 +101,7 @@ const Navbar = () => {
               alt="Gajra Gears"
               className="h-9 w-9 sm:h-11 sm:w-11 md:h-14 md:w-14 rounded-full ring-2 ring-white/80 shadow-sm object-cover"
             />
-            <span className="hidden lg:flex flex-col leading-tight">
+            <span className="hidden xl:flex flex-col leading-tight">
               <span className="text-lg font-extrabold tracking-tight text-gray-900">
                 GAJRA GEARS
               </span>
@@ -112,7 +112,10 @@ const Navbar = () => {
           </Link>
 
           {/* Search Bar */}
-          <div className="flex-1 min-w-0 max-w-2xl relative" ref={searchBoxRef}>
+          <div
+            className="justify-self-center relative min-w-0 w-full max-w-2xl lg:w-[32rem] xl:w-[42rem]"
+            ref={searchBoxRef}
+          >
 
             <span
               onClick={submitSearch}
@@ -197,7 +200,7 @@ const Navbar = () => {
               to="/customer-details/Retailer"
               title={t('mobile-head.customer_details')}
               aria-label={t('mobile-head.customer_details')}
-              className="flex-shrink-0 inline-flex items-center justify-center gap-2
+              className="justify-self-start flex-shrink-0 inline-flex items-center justify-center gap-2
                 h-10 w-10 sm:h-11 sm:w-auto sm:px-4 md:h-12 md:px-5
                 rounded-full bg-white text-gray-900 border-2 border-black
                 shadow-[0_2px_0_0_rgba(0,0,0,1)]

@@ -4,8 +4,6 @@ import { useNavigate } from 'react-router-dom';
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
 
-  console.log(product)
-
   return (
     <div 
       onClick={() => navigate(`/product/${product?.id}`)}
@@ -24,6 +22,20 @@ const ProductCard = ({ product }) => {
             Specification : {product.specification}
           </p>
         </div>
+
+        {/* Which fields the search term hit, when the card comes from a search */}
+        {product.matchedIn?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-3">
+            {product.matchedIn.map((label) => (
+              <span
+                key={label}
+                className="text-[9px] md:text-[10px] font-bold uppercase tracking-wide bg-[#FBF201]/60 text-gray-700 px-2 py-0.5 rounded-full"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Right Side */}

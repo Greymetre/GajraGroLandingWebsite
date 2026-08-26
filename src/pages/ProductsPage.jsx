@@ -45,6 +45,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import ProductCard from "../components/Products/ProductCard";
+import Pagination from "../components/utilities/Pagination";
 import gearImg from "../assets/Gear-img.png";
 import bglogo from "../assets/nobg-logo .png";
 import { useTranslation } from "react-i18next";
@@ -115,38 +116,6 @@ useEffect(() => {
   };
   console.log(totalPages);
 
-  const getVisiblePages = () => {
-    const pages = [];
-    const delta = 1; // kitne pages before/after current
-
-    const rangeStart = Math.max(2, currentPage - delta);
-    const rangeEnd = Math.min(totalPages - 1, currentPage + delta);
-
-    // Always first page
-    pages.push(1);
-
-    // Left dots
-    if (rangeStart > 2) {
-      pages.push("...");
-    }
-
-    // Middle pages
-    for (let i = rangeStart; i <= rangeEnd; i++) {
-      pages.push(i);
-    }
-
-    // Right dots
-    if (rangeEnd < totalPages - 1) {
-      pages.push("...");
-    }
-
-    // Always last page
-    if (totalPages > 1) {
-      pages.push(totalPages);
-    }
-
-    return pages;
-  };
   console.log(state);
 
   return (
@@ -221,47 +190,12 @@ useEffect(() => {
           ))}
         </div>
 
-        <div className="flex justify-center items-center gap-2 mt-12 flex-wrap">
-          {/* PREV */}
-          <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((prev) => prev - 1)}
-            className="px-3 py-2 bg-gray-100 rounded-lg disabled:opacity-40"
-          >
-            {"<"}
-          </button>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
 
-          {/* PAGE NUMBERS */}
-          {getVisiblePages().map((page, i) =>
-            page === "..." ? (
-              <span key={i} className="px-2 text-gray-400">
-                ...
-              </span>
-            ) : (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(page)}
-                className={`w-9 h-9 flex items-center justify-center rounded-xl font-bold 
-        ${
-          currentPage === page
-            ? "bg-[#FBF201] text-gray-900"
-            : "text-gray-400 hover:bg-gray-50 hover:text-gray-900"
-        }`}
-              >
-                {page}
-              </button>
-            ),
-          )}
-
-          {/* NEXT */}
-          <button
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-            className="px-3 py-2 bg-gray-100 rounded-lg disabled:opacity-40"
-          >
-            {">"}
-          </button>
-        </div>
       </main>
     </div>
   );

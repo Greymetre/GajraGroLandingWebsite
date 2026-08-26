@@ -1,5 +1,5 @@
 import React,{useState} from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Filter, Search, Mic,ChevronDown  } from 'lucide-react';
 import logo from '../assets/logo.jpg';
 import translatelanguage from '../assets/language.png';
@@ -8,7 +8,15 @@ import { useTranslation } from 'react-i18next';
 
 const MobileHeader = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { modelName } = useParams();
+  const [search, setSearch] = useState("");
+
+  const submitSearch = () => {
+    const term = search.trim();
+    if (!term) return;
+    navigate(`/search?q=${encodeURIComponent(term)}`);
+  };
 
   const { t, i18n } = useTranslation();
     const [showDropdown, setShowDropdown] = useState(false);
@@ -60,9 +68,20 @@ const MobileHeader = () => {
           <Filter className="text-gray-800 cursor-pointer flex-shrink-0" size={24} />
           
           <div className="relative flex-grow">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search
+              onClick={submitSearch}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer"
+              size={18}
+            />
             <input 
               type="text" 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  submitSearch();
+                }
+              }}
               placeholder={t('home.search_here')}  
               className="w-full pl-10 pr-10 py-2.5 rounded-full border-none shadow-inner font-semibold text-sm bg-white"
             />

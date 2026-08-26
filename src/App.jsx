@@ -4,6 +4,7 @@ import BrandsPage from './pages/BrandsPage';
 import Navbar from './layout/Navbar';
 import Footer from './layout/Footer';
 import ProductsPage from './pages/ProductsPage';
+import SearchResultsPage from './pages/SearchResultsPage';
 import ProductDetails from './components/Products/ProductDetails';
 import MobileHeader from './layout/MobileHeader';
 import CustomerDetails from './pages/CustomerDetails';
@@ -49,6 +50,7 @@ function App() {
         <Route element={<SharedLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/brands" element={<BrandsPage />} />
+          <Route path="/search" element={<SearchResultsPage />} />
           <Route path="/products/:modelName" element={<ProductsPage />} />
           <Route path="/product/:partId" element={<ProductDetails />} />
         </Route>

@@ -87,19 +87,19 @@ const Navbar = () => {
 
   return (
     <nav className="bg-[#FBF201] sticky top-0 z-50 shadow-sm border-b border-black/10">
-      <div className="max-w-7xl mx-auto px-4 md:px-6">
-        <div className="flex items-center gap-3 md:gap-6 h-20 md:h-24">
+      <div className="w-full px-3 sm:px-4 md:px-6">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 h-16 sm:h-20 md:h-24">
 
           {/* Logo + wordmark */}
           <Link
             to="/"
-            className="flex items-center gap-3 flex-shrink-0 transition-transform active:scale-95"
+            className="flex items-center gap-2 md:gap-3 flex-shrink-0 transition-transform active:scale-95"
             title="Go to Home"
           >
             <img
               src={logo}
               alt="Gajra Gears"
-              className="h-11 w-11 md:h-14 md:w-14 rounded-full ring-2 ring-white/80 shadow-sm object-cover"
+              className="h-9 w-9 sm:h-11 sm:w-11 md:h-14 md:w-14 rounded-full ring-2 ring-white/80 shadow-sm object-cover"
             />
             <span className="hidden lg:flex flex-col leading-tight">
               <span className="text-lg font-extrabold tracking-tight text-gray-900">
@@ -112,13 +112,13 @@ const Navbar = () => {
           </Link>
 
           {/* Search Bar */}
-          <div className="flex-1 max-w-2xl relative" ref={searchBoxRef}>
+          <div className="flex-1 min-w-0 max-w-2xl relative" ref={searchBoxRef}>
 
             <span
               onClick={submitSearch}
-              className="absolute inset-y-0 left-4 flex items-center text-gray-400 cursor-pointer"
+              className="absolute inset-y-0 left-3 sm:left-4 flex items-center text-gray-400 cursor-pointer"
             >
-              <Search size={20} />
+              <Search size={18} className="sm:w-5 sm:h-5" />
             </span>
 
             <input
@@ -142,12 +142,12 @@ const Navbar = () => {
                 }
               }}
               placeholder={t('home.search_here')}
-              className="w-full h-11 md:h-12 pl-11 pr-24 md:pr-28 bg-white rounded-full border border-black/10 shadow-sm focus:ring-2 focus:ring-black/20 outline-none text-sm md:text-base font-semibold"
+              className="w-full h-10 sm:h-11 md:h-12 pl-9 sm:pl-11 pr-20 sm:pr-24 md:pr-28 bg-white rounded-full border border-black/10 shadow-sm focus:ring-2 focus:ring-black/20 outline-none text-sm md:text-base font-semibold"
             />
 
             <button
               onClick={submitSearch}
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-9 md:h-10 px-4 md:px-5
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 sm:h-9 md:h-10 px-3 sm:px-4 md:px-5
                 bg-black text-white rounded-full
                 hover:bg-gray-800 transition-colors duration-200
                 text-sm font-semibold"
@@ -197,8 +197,8 @@ const Navbar = () => {
               to="/customer-details/Retailer"
               title={t('mobile-head.customer_details')}
               aria-label={t('mobile-head.customer_details')}
-              className="ml-auto flex-shrink-0 inline-flex items-center justify-center gap-2
-                h-11 md:h-12 w-11 sm:w-auto sm:px-5
+              className="flex-shrink-0 inline-flex items-center justify-center gap-2
+                h-10 w-10 sm:h-11 sm:w-auto sm:px-4 md:h-12 md:px-5
                 rounded-full bg-white text-gray-900 border-2 border-black
                 shadow-[0_2px_0_0_rgba(0,0,0,1)]
                 hover:bg-black hover:text-white

@@ -1242,13 +1242,6 @@ const CustomerDetails = () => {
               )}
             </div>
 
-            <div className="flex justify-center mt-6 md:mt-14">
-              <img
-                src={logo}
-                alt=""
-                className="h-11 w-11 md:h-16 md:w-16 rounded-full object-contain"
-              />
-            </div>
           </div>
 
           {/* STORE GRID*/}
@@ -1262,7 +1255,7 @@ const CustomerDetails = () => {
             ))}
           </div> */}
 
-          <div className="flex flex-col md:grid md:grid-cols-3 md:gap-8">
+          <div className="flex flex-col md:grid md:grid-cols-3 md:gap-8 mt-6 md:mt-14">
             {isListLoading ? (
               // 🔄 LOADING UI
               <div className="col-span-3 flex justify-center items-center py-20">

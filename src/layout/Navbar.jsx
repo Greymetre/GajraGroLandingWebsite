@@ -159,7 +159,7 @@ const Navbar = () => {
                     {product.name}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
-                    {product.partNo ? `Part no. ${product.partNo}` : product.productNo}
+                    {product.partNo ? `Part No. ${product.partNo}` : product.productNo}
                     {product.model ? ` · ${product.model}` : ""}
                   </p>
                   {matchedIn.length > 0 && (

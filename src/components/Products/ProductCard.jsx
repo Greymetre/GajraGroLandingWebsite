@@ -16,7 +16,7 @@ const ProductCard = ({ product }) => {
         </h3>
         <div className="space-y-1">
           <p className="text-[10px] md:text-sm text-gray-500 font-medium tracking-tight">
-            Part no. : {product.partNo}
+            Part No. : {product.partNo}
           </p>
           <p className="text-[10px] md:text-sm text-gray-500 font-medium tracking-tight">
             Specification : {product.specification}

@@ -287,7 +287,7 @@ const CustomerDetails = () => {
   const latestRequestRef = useRef(0);
 
   // ── NEARBY SEARCH ──────────────────────────────────────────────────────────
-  const NEARBY_RADIUS_KM = 10;
+  const DEFAULT_NEARBY_RADIUS_KM = 10;
   const NEARBY_PER_PAGE = 20;
   // The app deep-links into one locator and narrows the type picker with
   // ?status / ?mechanicStatus. Opened directly on the web without those flags
@@ -310,6 +310,14 @@ const CustomerDetails = () => {
   const NEARBY_TYPE_OPTIONS = filteredCustomerTypeOptions;
 
   const [nearbyMode, setNearbyMode] = useState(false);
+  const [showRadiusModal, setShowRadiusModal] = useState(false);
+  const [nearbyRadiusKm, setNearbyRadiusKm] = useState(
+    DEFAULT_NEARBY_RADIUS_KM,
+  );
+  const [radiusInput, setRadiusInput] = useState(
+    String(DEFAULT_NEARBY_RADIUS_KM),
+  );
+  const [radiusError, setRadiusError] = useState("");
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyError, setNearbyError] = useState("");
   const [nearbyProgress, setNearbyProgress] = useState("");
@@ -321,7 +329,7 @@ const CustomerDetails = () => {
   const nearbyType =
     customerPayload.customerType?.[0] || NEARBY_TYPE_OPTIONS[0].id;
 
-  const buildNearbyResults = (records, origin, sanityIndex) =>
+  const buildNearbyResults = (records, origin, sanityIndex, radiusKm) =>
     records
       .map((record) => {
         const point = parseCoordinates(record);
@@ -332,7 +340,7 @@ const CustomerDetails = () => {
         if (!hasPlausibleCoordinates(record, point, sanityIndex)) return null;
 
         const distanceKm = getDistanceInKm(origin, point);
-        return distanceKm <= NEARBY_RADIUS_KM ? { ...record, distanceKm } : null;
+        return distanceKm <= radiusKm ? { ...record, distanceKm } : null;
       })
       .filter(Boolean)
       .sort((a, b) => a.distanceKm - b.distanceKm);
@@ -362,7 +370,7 @@ const CustomerDetails = () => {
       );
     });
 
-  const loadNearby = async (type, origin) => {
+  const loadNearby = async (type, origin, radiusKm = nearbyRadiusKm) => {
     const requestId = ++nearbyRequestRef.current;
 
     setNearbyLoading(true);
@@ -387,7 +395,7 @@ const CustomerDetails = () => {
       if (requestId !== nearbyRequestRef.current) return;
 
       setNearbyResults(
-        buildNearbyResults(cached.records, origin, cached.sanityIndex),
+        buildNearbyResults(cached.records, origin, cached.sanityIndex, radiusKm),
       );
       setCurrentPage(1);
     } catch (err) {
@@ -404,7 +412,7 @@ const CustomerDetails = () => {
     }
   };
 
-  const enableNearbyMode = async () => {
+  const enableNearbyMode = async (radiusKm) => {
     setNearbyLoading(true);
     setNearbyError("");
 
@@ -428,7 +436,7 @@ const CustomerDetails = () => {
         });
       }
 
-      await loadNearby(type, origin);
+      await loadNearby(type, origin, radiusKm);
     } catch (err) {
       setNearbyLoading(false);
       setNearbyError(err.message);
@@ -447,7 +455,29 @@ const CustomerDetails = () => {
 
   const toggleNearbyMode = () => {
     if (nearbyLoading) return;
-    nearbyMode ? disableNearbyMode() : enableNearbyMode();
+    if (nearbyMode) {
+      disableNearbyMode();
+      return;
+    }
+
+    setRadiusInput(String(nearbyRadiusKm));
+    setRadiusError("");
+    setShowRadiusModal(true);
+  };
+
+  const startNearbySearch = (event) => {
+    event.preventDefault();
+    const radius = Number(radiusInput);
+
+    if (!Number.isFinite(radius) || radius <= 0) {
+      setRadiusError("Please enter a valid distance greater than 0 km.");
+      return;
+    }
+
+    setNearbyRadiusKm(radius);
+    setShowRadiusModal(false);
+    setRadiusError("");
+    enableNearbyMode(radius);
   };
 
   const handleNearbyTypeChange = (value) => {
@@ -460,7 +490,7 @@ const CustomerDetails = () => {
       search: location.search,
     });
 
-    if (coords) loadNearby(value, coords);
+    if (coords) loadNearby(value, coords, nearbyRadiusKm);
   };
   // useEffect(() => {
   //   setCustomerPayload((prev) => ({
@@ -957,6 +987,91 @@ const CustomerDetails = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans">
+      {showRadiusModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="nearby-radius-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowRadiusModal(false);
+          }}
+        >
+          <form
+            onSubmit={startNearbySearch}
+            className="w-full max-w-md rounded-3xl bg-white p-6 md:p-8 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2
+                  id="nearby-radius-title"
+                  className="text-xl md:text-2xl font-black uppercase italic text-gray-900"
+                >
+                  Select Search Range
+                </h2>
+                <p className="mt-2 text-sm font-medium text-gray-500">
+                  Enter how far you want to search from your current location.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setShowRadiusModal(false)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xl font-bold text-gray-600 hover:bg-gray-200"
+              >
+                &times;
+              </button>
+            </div>
+
+            <label
+              htmlFor="nearby-radius"
+              className="mt-6 block text-xs font-black uppercase tracking-wide text-gray-700"
+            >
+              Distance in kilometres
+            </label>
+            <div className="relative mt-2">
+              <input
+                id="nearby-radius"
+                type="number"
+                min="0.1"
+                step="any"
+                autoFocus
+                required
+                value={radiusInput}
+                onChange={(event) => {
+                  setRadiusInput(event.target.value);
+                  setRadiusError("");
+                }}
+                placeholder="e.g. 10 or 15"
+                className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 pr-14 text-base font-bold text-gray-900 outline-none transition focus:border-[#FBF201]"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-gray-500">
+                KM
+              </span>
+            </div>
+            {radiusError && (
+              <p className="mt-2 text-xs font-bold text-red-500">{radiusError}</p>
+            )}
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowRadiusModal(false)}
+                className="flex-1 rounded-2xl border-2 border-gray-200 px-4 py-3 text-sm font-black uppercase text-gray-700 transition hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 rounded-2xl bg-[#FBF201] px-4 py-3 text-sm font-black uppercase text-gray-900 shadow-sm transition hover:brightness-95"
+              >
+                Search Nearby
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/*  HEADER */}
       <header className="bg-[#FBF201] px-4 md:px-10 py-3 md:py-4 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center">
@@ -1058,7 +1173,7 @@ const CustomerDetails = () => {
               {!nearbyLoading && nearbyMode && coords && (
                 <p className="text-xs md:text-sm font-bold text-gray-500 text-center">
                   Showing {NEARBY_TYPE_OPTIONS.find((i) => i.id === nearbyType)?.name}
-                  s within {NEARBY_RADIUS_KM} km of your location
+                  s within {nearbyRadiusKm} km of your location
                   <span className="block text-[10px] md:text-xs text-gray-400 font-medium mt-1 normal-case">
                     Stores without saved map coordinates cannot appear here.
                   </span>
@@ -1274,7 +1389,7 @@ const CustomerDetails = () => {
               // ❌ EMPTY STATE
               <div className="col-span-3 text-center py-20 text-gray-400 font-bold">
                 {nearbyMode
-                  ? `No stores found within ${NEARBY_RADIUS_KM} km of your location`
+                  ? `No stores found within ${nearbyRadiusKm} km of your location`
                   : "No Stores Found"}
               </div>
             )}

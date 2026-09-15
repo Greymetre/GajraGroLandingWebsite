@@ -345,30 +345,56 @@ const CustomerDetails = () => {
       .filter(Boolean)
       .sort((a, b) => a.distanceKm - b.distanceKm);
 
-  const requestCurrentPosition = () =>
+  const getBrowserPosition = (options) =>
     new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error("Your browser does not support location access."));
-        return;
+      navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    });
+
+  const requestCurrentPosition = async () => {
+    if (!navigator.geolocation) {
+      throw new Error("Your browser does not support location access.");
+    }
+
+    let position;
+
+    try {
+      position = await getBrowserPosition({
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 60000,
+      });
+    } catch (firstError) {
+      // Desktop browsers (especially macOS) can fail to provide a GPS-quality
+      // fix even when permission is allowed. Retry using Wi-Fi/network location.
+      if (firstError.code === 1) {
+        throw new Error(
+          "Location permission denied. Allow location access and try again.",
+        );
       }
 
-      navigator.geolocation.getCurrentPosition(
-        (position) =>
-          resolve({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          }),
-        (error) => {
-          const messages = {
-            1: "Location permission denied. Allow location access and try again.",
-            2: "Your location is unavailable right now. Please try again.",
-            3: "Locating you took too long. Please try again.",
-          };
-          reject(new Error(messages[error.code] || "Could not detect your location."));
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
-      );
-    });
+      try {
+        position = await getBrowserPosition({
+          enableHighAccuracy: false,
+          timeout: 20000,
+          maximumAge: 300000,
+        });
+      } catch (fallbackError) {
+        const messages = {
+          1: "Location permission denied. Allow location access and try again.",
+          2: "Chrome could not determine your location. Turn on Wi-Fi and macOS Location Services, then try again.",
+          3: "Locating you took too long. Check your internet connection and try again.",
+        };
+        throw new Error(
+          messages[fallbackError.code] || "Could not detect your location.",
+        );
+      }
+    }
+
+    return {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+    };
+  };
 
   const loadNearby = async (type, origin, radiusKm = nearbyRadiusKm) => {
     const requestId = ++nearbyRequestRef.current;

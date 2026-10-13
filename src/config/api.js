@@ -9,6 +9,11 @@ export const getProductById = (id) => {
   return axiosInstance.get(`website/products/${id}`);
 };
 
+// Active brands with logos, managed in the SFA admin
+export const getBrands = () => {
+  return axiosInstance.get("website/brands");
+};
+
 
 // ✅ Get States
 export const getStates = async () => {

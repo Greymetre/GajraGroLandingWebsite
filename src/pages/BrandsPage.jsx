@@ -1,21 +1,11 @@
-import React, { useState } from 'react'; 
+import React, { useEffect, useState } from 'react';
 import BrandCard from '../components/Brands/BrandCard';
 import ModelSelectionModal from '../components/Brands/ModelSelectionModal';
 import bglogo from '../assets/nobg-logo .png';
+import gajraLogo from '../assets/gajragears-favicon.png';
 import { useTranslation } from 'react-i18next';
-import { getAllProducts } from '../config/api';
-
-
-import brand1 from '../assets/brandlogo 1.png';
-import brand2 from '../assets/brand2.png';
-import brand3 from '../assets/brand3.png';
-import brand4 from '../assets/brand4.png';
-import brand5 from '../assets/brand5.png';
-import brand6 from '../assets/brand6.png';
-import brand7 from '../assets/brand7.png';
-import brand8 from '../assets/brand8.png';
-import brand9 from '../assets/brand9.png';
-import brand10 from '../assets/brand10.png';
+import { getAllProducts, getBrands } from '../config/api';
+import { assetUrl } from '../config/environment';
 
 const BrandsPage = () => {
   const [selectedBrand, setSelectedBrand] = useState(null);
@@ -23,8 +13,24 @@ const BrandsPage = () => {
   const [models, setModels] = useState([]);
 const [loading, setLoading] = useState(false);
 const [brandModels,setBrandModels] =useState({brandName: "",subCategories: []})
+  const [brands, setBrands] = useState([]);
+  const [brandsLoading, setBrandsLoading] = useState(true);
 
   const { t } = useTranslation();
+
+  // Brands and logos come from the SFA admin (Brands master); Gajra logo when none is uploaded
+  useEffect(() => {
+    getBrands()
+      .then((res) => {
+        const list = res.data?.data || [];
+        setBrands(list.map((brand) => ({
+          name: brand.name,
+          logo: brand.logo ? assetUrl(brand.logo) : gajraLogo,
+        })));
+      })
+      .catch((error) => console.error(error))
+      .finally(() => setBrandsLoading(false));
+  }, []);
 
   const handleBrandClick = async (brand) => {
     console.log(brand)
@@ -53,19 +59,6 @@ const [brandModels,setBrandModels] =useState({brandName: "",subCategories: []})
   }
 };
 console.log(brandModels)
-
-  const brands = [
-    { name: 'Ford', logo: brand1 },
-    { name: 'Swaraj', logo: brand2 },
-    { name: 'Force', logo: brand3 },
-    { name: 'JCB', logo: brand4 },
-    { name: 'Tata', logo: brand5 },
-    { name: 'Mahindra', logo: brand6 },
-    { name: 'Escorts', logo: brand7 },
-    { name: 'Eicher', logo: brand8 },
-    { name: 'Leyland', logo: brand9 },
-    { name: 'Tafe', logo: brand10 },
-  ];
 
   // const brandModels = {
   //   "Mahindra": ["Arjun 605", "Novo 755", "Jivo 225", "M&M TRACTOR"],
@@ -99,11 +92,17 @@ console.log(brandModels)
           <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-38 h-1 bg-[#FBF201] rounded-full"></span>
         </h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-10">
-          {brands.map((brand, index) => (
-            <BrandCard key={index} brand={brand} onClick={handleBrandClick} />
-          ))}
-        </div>
+        {brandsLoading ? (
+          <div className="flex justify-center py-20">
+            <div className="h-10 w-10 border-4 border-[#FBF201] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-10">
+            {brands.map((brand, index) => (
+              <BrandCard key={index} brand={brand} onClick={handleBrandClick} />
+            ))}
+          </div>
+        )}
       </main>
 
       <ModelSelectionModal 

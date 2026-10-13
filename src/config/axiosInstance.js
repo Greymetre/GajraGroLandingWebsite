@@ -1,8 +1,8 @@
 import axios from "axios";
-import { API_BASE_URL } from "./environment";
+import { DISTRIBUTOR_API_BASE_URL } from "./environment";
 
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: DISTRIBUTOR_API_BASE_URL,
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",

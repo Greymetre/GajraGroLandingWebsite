@@ -2,11 +2,11 @@ import axiosInstance from "./axiosInstance";
 import { DISTRIBUTOR_API_BASE_URL } from "./environment";
 
 export const getAllProducts = (payload) => {
-  return axiosInstance.post("user/products/all", payload);
+  return axiosInstance.post("website/products", payload);
 };
 
 export const getProductById = (id) => {
-  return axiosInstance.get(`user/products/${id}`);
+  return axiosInstance.get(`website/products/${id}`);
 };
 
 
@@ -139,7 +139,7 @@ export const getDistributorPincodes = async (city_id = '') => {
 export const getYoutubeShorts = async ()=>{
   try {
     const response = await axiosInstance.get(
-      "/user/setting/youtube-shorts"
+      "/getYoutubeShorts"
     );
     return response.data;
   } catch (error) {

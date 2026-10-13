@@ -50,7 +50,7 @@ import gearImg from "../assets/Gear-img.png";
 import bglogo from "../assets/nobg-logo .png";
 import { useTranslation } from "react-i18next";
 import { getAllProducts } from "../config/api";
-import { ASSET_BASE_URL } from "../config/environment";
+import { assetUrl } from "../config/environment";
 
 const ProductsPage = () => {
   let { modelName } = useParams();
@@ -63,7 +63,6 @@ const ProductsPage = () => {
   const hasFilters = Object.values(filters).some((val) => val);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const BASE_URL = ASSET_BASE_URL;
   console.log(state);
   if (state?.type === "search" || state?.type) {
     modelName = "";
@@ -183,7 +182,7 @@ useEffect(() => {
                 specification: item?.productDetail?.[0]?.specification || "-",
                 img:
                   item?.images?.[0] !== undefined
-                    ? BASE_URL + "/" + item.images[0]
+                    ? assetUrl(item.images[0])
                     : gearImg, // fallback image
               }}
             />

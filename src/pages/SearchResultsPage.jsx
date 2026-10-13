@@ -5,7 +5,7 @@ import Pagination from "../components/utilities/Pagination";
 import gearImg from "../assets/Gear-img.png";
 import bglogo from "../assets/nobg-logo .png";
 import { loadCatalogue, searchCatalogue } from "../config/catalogue";
-import { ASSET_BASE_URL } from "../config/environment";
+import { assetUrl } from "../config/environment";
 
 const RECORDS_PER_PAGE = 10;
 
@@ -134,7 +134,7 @@ const SearchResultsPage = () => {
                   product?.productDetail?.[0]?.specification ||
                   "-",
                 img: product?.images?.[0]
-                  ? `${ASSET_BASE_URL}/${product.images[0]}`
+                  ? assetUrl(product.images[0])
                   : gearImg,
                 matchedIn: fields,
               }}

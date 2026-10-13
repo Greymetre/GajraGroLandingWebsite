@@ -20,7 +20,7 @@ import video1 from "../../assets/video1.mp4";
 import video2 from "../../assets/video2.mp4";
 import video3 from "../../assets/video3.mp4";
 import { getProductById } from "../../config/api";
-import { ASSET_BASE_URL } from "../../config/environment";
+import { assetUrl } from "../../config/environment";
 import ReelSec from "../Home/ReelSec";
 
 const ProductDetails = () => {
@@ -43,7 +43,6 @@ const animationFrame = useRef(null);
 
   const [playingId, setPlayingId] = useState(null);
 
-  const BASE_URL = ASSET_BASE_URL;
 
   useEffect(() => {
     fetchProduct();
@@ -216,7 +215,7 @@ const handleMouseUp = () => {
             <img
               src={
                 product?.images?.[0] !== undefined
-                  ? BASE_URL + "/" + product?.images[0]
+                  ? assetUrl(product.images[0])
                   : gearImg
               }
               alt="Gear"
@@ -387,7 +386,7 @@ const handleMouseUp = () => {
 <img
   src={
     product?.images?.[0]
-      ? BASE_URL + "/" + product.images[0]
+      ? assetUrl(product.images[0])
       : gearImg
   }
   alt="Product"

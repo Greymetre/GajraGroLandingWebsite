@@ -31,9 +31,8 @@ Restart the development server after changing `.env`.
 
 | Variable | Purpose |
 | --- | --- |
-| `VITE_API_BASE_URL` | Main product/customer API |
-| `VITE_DISTRIBUTOR_API_BASE_URL` | Distributor, state, city and pincode API |
-| `VITE_ASSET_BASE_URL` | Product image base URL |
+| `VITE_DISTRIBUTOR_API_BASE_URL` | Gajra Gear SFA API: products, YouTube shorts, dealer locator, state/city/pincode |
+| `VITE_ASSET_BASE_URL` | Base URL for relative image paths (the SFA API returns full image URLs) |
 
 Vite embeds `VITE_*` values into the browser bundle at build time. They must
 not contain secrets.

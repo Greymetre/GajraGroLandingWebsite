@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { getAllProducts } from "../../config/api";
-import { ASSET_BASE_URL } from "../../config/environment";
+import { assetUrl } from "../../config/environment";
 import gearImg from "../../assets/Gear-img.png";
 
 const NewLaunches = () => {
@@ -19,6 +19,7 @@ const NewLaunches = () => {
         currentPage: 1,
         recordPerPage: 2000,
         search: "",
+        isNewLaunch: true,
       };
       const response = await getAllProducts(payload);
 
@@ -117,7 +118,7 @@ const NewLaunches = () => {
                   <img
                     src={
                       product.images?.[0]
-                        ? `${ASSET_BASE_URL}/${product.images[0]}`
+                        ? assetUrl(product.images[0])
                         : gearImg
                     }
                     alt={product.name}

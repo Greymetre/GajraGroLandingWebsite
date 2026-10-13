@@ -12,10 +12,12 @@ const NewLaunches = () => {
   const [loading, setLoading] = useState(true);
   const [isHovering, setIsHovering] = useState(false);
 
-  // Up to 3 cards fit on desktop; only loop (duplicate + auto scroll) when there are more,
-  // otherwise the same product shows twice.
-  const loop = rawProducts.length > 3;
-  const displayProducts = loop ? [...rawProducts, ...rawProducts] : rawProducts;
+  // Up to 3 cards fit on desktop. Repeat the list until one set is wider than the
+  // screen (at least 4 cards), then double that set so the auto scroll can loop
+  // seamlessly; a repeat only appears at the edge as the set wraps around.
+  const repeat = rawProducts.length ? Math.ceil(4 / rawProducts.length) : 0;
+  const loopSet = Array.from({ length: repeat }, () => rawProducts).flat();
+  const displayProducts = [...loopSet, ...loopSet];
 
   const fetchProducts = async () => {
     try {
@@ -49,7 +51,7 @@ const NewLaunches = () => {
   useEffect(() => {
     const container = scrollRef.current;
 
-    if (!container || !loop) return;
+    if (!container || !rawProducts.length) return;
 
     let animationFrame;
     let scrollSpeed = 1; // speed
@@ -70,7 +72,7 @@ const NewLaunches = () => {
     animationFrame = requestAnimationFrame(autoScroll);
 
     return () => cancelAnimationFrame(animationFrame);
-  }, [loop, isHovering]);
+  }, [rawProducts, isHovering]);
 
   if (loading) {
     return (
@@ -103,7 +105,7 @@ const NewLaunches = () => {
         <div className="max-w-7xl mx-auto">
           <div
             ref={scrollRef}
-            className={`flex gap-4 md:gap-6 overflow-x-scroll pb-6 scrollbar-hide ${loop ? "" : "lg:justify-center"}`}
+            className="flex gap-4 md:gap-6 overflow-x-scroll pb-6 scrollbar-hide"
             style={{
               scrollbarWidth: "none",
               msOverflowStyle: "none",
@@ -118,20 +120,19 @@ const NewLaunches = () => {
                 key={index}
                 className="flex-shrink-0 w-[85%] sm:w-[48%] lg:w-[32%] snap-start"
               >
-                <div className="relative overflow-hidden rounded-2xl group shadow-sm hover:shadow-xl transition-all duration-300 h-[420px]">
-                  {/* Product Image */}
-                  <img
-                    src={
-                      product.images?.[0]
-                        ? assetUrl(product.images[0])
-                        : gearImg
-                    }
-                    alt={product.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-
-                  {/* Optional Dark Overlay */}
-                  <div className="absolute inset-0 bg-black/20"></div>
+                <div className="relative overflow-hidden rounded-2xl group shadow-sm hover:shadow-xl transition-all duration-300 h-[420px] bg-white">
+                  {/* Product Image: shown at most at its own size so small uploads stay sharp */}
+                  <div className="absolute inset-0 flex items-center justify-center px-6 pt-20 pb-6">
+                    <img
+                      src={
+                        product.images?.[0]
+                          ? assetUrl(product.images[0])
+                          : gearImg
+                      }
+                      alt={product.name}
+                      className="max-w-full max-h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
 
                   {/* NEW Badge */}
                   <div className="absolute top-4 left-4 z-20 bg-[#FF3B30] text-white text-xs font-black px-3 py-1.5 rounded-lg">

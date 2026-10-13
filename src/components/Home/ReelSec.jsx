@@ -77,10 +77,20 @@ const getShorts = async () => {
 
 
 
+  // Infinite loop clones 2 videos on each side; with few videos those clones show as
+  // duplicates, so only loop when there are enough videos.
+  const loop = rawData.length >= 5;
+  const offset = loop ? 2 : 0;
+
   const reelsData = useMemo(
-    () => [...rawData.slice(-2), ...rawData, ...rawData.slice(0, 2)],
-    [rawData]
+    () => (loop ? [...rawData.slice(-2), ...rawData, ...rawData.slice(0, 2)] : rawData),
+    [rawData, loop]
   );
+
+  // start on the first real video once the list arrives
+  useEffect(() => {
+    setActiveIndex(offset);
+  }, [offset, rawData.length]);
 
   /* ─── Responsive Card Dimensions ─── */
   const cardDims = useMemo(() => {
@@ -131,7 +141,7 @@ const getShorts = async () => {
 
   /* ─── Handle infinite loop reset ─── */
   useEffect(() => {
-    if (!rawData.length || isResetting.current) return;
+    if (!loop || !rawData.length || isResetting.current) return;
 
     if (activeIndex >= rawData.length + 2) {
       isResetting.current = true;
@@ -156,17 +166,17 @@ const getShorts = async () => {
         });
       }, 680);
     }
-  }, [activeIndex, rawData.length]);
+  }, [activeIndex, rawData.length, loop]);
 
   const handleNext = useCallback(() => {
-    if (isResetting.current) return;
-    setActiveIndex((p) => p + 1);
-  }, []);
+    if (isResetting.current || !rawData.length) return;
+    setActiveIndex((p) => (loop ? p + 1 : (p + 1) % rawData.length));
+  }, [loop, rawData.length]);
 
   const handlePrev = useCallback(() => {
-    if (isResetting.current) return;
-    setActiveIndex((p) => p - 1);
-  }, []);
+    if (isResetting.current || !rawData.length) return;
+    setActiveIndex((p) => (loop ? p - 1 : (p - 1 + rawData.length) % rawData.length));
+  }, [loop, rawData.length]);
 
   /* ─── Get card styles based on distance from active ─── */
   const getCardStyle = useCallback(
@@ -283,7 +293,7 @@ const getShorts = async () => {
             <div
               key={i}
               className={`h-2 rounded-full transition-all duration-500 ${
-                (activeIndex - 2 + rawData.length) % rawData.length === i
+                (activeIndex - offset + rawData.length) % rawData.length === i
                   ? "w-12 bg-[#FFED00]"
                   : "w-3 bg-gray-200"
               }`}

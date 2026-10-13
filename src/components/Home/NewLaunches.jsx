@@ -12,6 +12,11 @@ const NewLaunches = () => {
   const [loading, setLoading] = useState(true);
   const [isHovering, setIsHovering] = useState(false);
 
+  // Up to 3 cards fit on desktop; only loop (duplicate + auto scroll) when there are more,
+  // otherwise the same product shows twice.
+  const loop = rawProducts.length > 3;
+  const displayProducts = loop ? [...rawProducts, ...rawProducts] : rawProducts;
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -44,7 +49,7 @@ const NewLaunches = () => {
   useEffect(() => {
     const container = scrollRef.current;
 
-    if (!container || rawProducts.length === 0) return;
+    if (!container || !loop) return;
 
     let animationFrame;
     let scrollSpeed = 1; // speed
@@ -65,7 +70,7 @@ const NewLaunches = () => {
     animationFrame = requestAnimationFrame(autoScroll);
 
     return () => cancelAnimationFrame(animationFrame);
-  }, [rawProducts, isHovering]);
+  }, [loop, isHovering]);
 
   if (loading) {
     return (
@@ -98,7 +103,7 @@ const NewLaunches = () => {
         <div className="max-w-7xl mx-auto">
           <div
             ref={scrollRef}
-            className="flex gap-4 md:gap-6 overflow-x-scroll pb-6 scrollbar-hide"
+            className={`flex gap-4 md:gap-6 overflow-x-scroll pb-6 scrollbar-hide ${loop ? "" : "lg:justify-center"}`}
             style={{
               scrollbarWidth: "none",
               msOverflowStyle: "none",
@@ -108,7 +113,7 @@ const NewLaunches = () => {
             onMouseLeave={() => setIsHovering(false)}
           >
             {/* Duplicate items for seamless infinite scroll */}
-            {[...rawProducts, ...rawProducts].map((product, index) => (
+            {displayProducts.map((product, index) => (
               <div
                 key={index}
                 className="flex-shrink-0 w-[85%] sm:w-[48%] lg:w-[32%] snap-start"

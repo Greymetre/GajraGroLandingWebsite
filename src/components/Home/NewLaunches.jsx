@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { getAllProducts } from "../../config/api";
 import { ASSET_BASE_URL } from "../../config/environment";
+import gearImg from "../../assets/Gear-img.png";
 
 const NewLaunches = () => {
   const { t } = useTranslation();
@@ -114,7 +115,11 @@ const NewLaunches = () => {
                 <div className="relative overflow-hidden rounded-2xl group shadow-sm hover:shadow-xl transition-all duration-300 h-[420px]">
                   {/* Product Image */}
                   <img
-                    src={`${ASSET_BASE_URL}/${product.images?.[0]}`}
+                    src={
+                      product.images?.[0]
+                        ? `${ASSET_BASE_URL}/${product.images[0]}`
+                        : gearImg
+                    }
                     alt={product.name}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />

@@ -11,5 +11,5 @@ export const DISTRIBUTOR_API_BASE_URL = removeTrailingSlash(
 
 export const ASSET_BASE_URL = removeTrailingSlash(
   import.meta.env.VITE_ASSET_BASE_URL ||
-    "https://s3.ap-south-1.amazonaws.com/gajragro2.fieldkonnect.io",
+    "https://gajragro.fieldkonnect.io",
 );

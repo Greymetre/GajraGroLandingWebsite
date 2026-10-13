@@ -170,6 +170,11 @@ const VideoCard = ({
             src={data.thumbnail}
             alt="thumbnail"
             className="w-full h-full object-cover"
+            onError={(e) => {
+              if (data.fallbackThumbnail && e.currentTarget.src !== data.fallbackThumbnail) {
+                e.currentTarget.src = data.fallbackThumbnail;
+              }
+            }}
           />
         )}
 

@@ -21,6 +21,7 @@ const ReelSec = () => {
   const [activeIndex, setActiveIndex] = useState(2);
   const [youtubeReels, setYoutubeReels] = useState([]);
   const [enableTransition, setEnableTransition] = useState(true);
+  const [isHovering, setIsHovering] = useState(false);
   const sliderWrapperRef = useRef(null);
 
   const rawData = useMemo(() => youtubeReels, [youtubeReels]);
@@ -52,13 +53,15 @@ const getShorts = async () => {
       response?.data?.youtubeShorts || [];
 
     const formatted = shorts.map((url, index) => {
-      // Extract video ID from shorts URL
-      const videoId = url.split("/shorts/")[1];
+      // Extract video ID from shorts URL (drop any ?feature=share etc.)
+      const videoId = (url.split("/shorts/")[1] || "").split(/[?&#/]/)[0];
 
       return {
         id: index,
         videoId,
-        thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
+        // portrait 720x1280 thumbnail for Shorts; VideoCard falls back to hqdefault
+        thumbnail: `https://i.ytimg.com/vi/${videoId}/oardefault.jpg`,
+        fallbackThumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
         text: `YouTube Short ${index + 1}`,
       };
     });
@@ -178,6 +181,13 @@ const getShorts = async () => {
     setActiveIndex((p) => (loop ? p - 1 : (p - 1 + rawData.length) % rawData.length));
   }, [loop, rawData.length]);
 
+  /* ─── Auto scroll: next video every 3.5s, paused on hover or while a video plays ─── */
+  useEffect(() => {
+    if (rawData.length < 2 || isHovering || playingId) return;
+    const timer = setInterval(handleNext, 3500);
+    return () => clearInterval(timer);
+  }, [rawData.length, isHovering, playingId, handleNext]);
+
   /* ─── Get card styles based on distance from active ─── */
   const getCardStyle = useCallback(
     (index) => {
@@ -226,6 +236,8 @@ const getShorts = async () => {
         <div
           ref={sliderWrapperRef}
           className="relative overflow-hidden select-none"
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
